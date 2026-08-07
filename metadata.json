@@ -1,0 +1,6 @@
+{
+  "name": "Gestão Comercial & Estoque ERP",
+  "description": "Sistema completo de Gestão Comercial, Controle de Estoque, PDV, Financeiro e Assistente Inteligente AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
