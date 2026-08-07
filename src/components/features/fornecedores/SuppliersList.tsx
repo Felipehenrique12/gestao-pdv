@@ -27,11 +27,16 @@ export const SuppliersList: React.FC = () => {
   const [deletingSupplierId, setDeletingSupplierId] = useState<string | null>(null);
 
   const filteredSuppliers = suppliers.filter((s) => {
+    const razaoSocial = (s.razaoSocial ?? '').trim();
+    const nomeFantasia = (s.nomeFantasia ?? '').trim();
+    const cnpj = (s.cnpj ?? '').trim();
+    const email = (s.email ?? '').trim();
+
     return (
-      s.razaoSocial.toLowerCase().includes(search.toLowerCase()) ||
-      (s.nomeFantasia && s.nomeFantasia.toLowerCase().includes(search.toLowerCase())) ||
-      s.cnpj.includes(search) ||
-      s.email.toLowerCase().includes(search.toLowerCase())
+      razaoSocial.toLowerCase().includes(search.toLowerCase()) ||
+      nomeFantasia.toLowerCase().includes(search.toLowerCase()) ||
+      cnpj.includes(search) ||
+      email.toLowerCase().includes(search.toLowerCase())
     );
   });
 

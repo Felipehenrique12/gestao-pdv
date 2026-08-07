@@ -10,7 +10,6 @@ import {
   Truck,
   ShoppingCart,
   DollarSign,
-  Bot,
   ChevronLeft,
   ChevronRight,
   Sun,
@@ -34,7 +33,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     { label: 'Fornecedores', path: '/fornecedores', icon: Truck },
     { label: 'Vendas (PDV)', path: '/vendas', icon: ShoppingCart },
     { label: 'Financeiro', path: '/financeiro', icon: DollarSign },
-    { label: 'Assistente AI', path: '/assistente', icon: Bot, badge: 'IA' },
   ];
 
   return (
@@ -87,13 +85,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
               >
                 <Icon className="w-5 h-5 shrink-0" />
                 {!collapsed && <span className="truncate">{item.label}</span>}
-
-                {/* Badge if present */}
-                {item.badge && !collapsed && (
-                  <span className="ml-auto px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-xs">
-                    {item.badge}
-                  </span>
-                )}
 
                 {/* Tooltip on Collapsed */}
                 {collapsed && (

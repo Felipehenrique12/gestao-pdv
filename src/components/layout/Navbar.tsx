@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Bell, ShoppingCart, Bot, Plus } from 'lucide-react';
+import { Search, Bell, ShoppingCart, Plus } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { GlobalSearchModal } from '../common/GlobalSearchModal';
 import { useNavigate } from 'react-router-dom';
@@ -35,16 +35,6 @@ export const Navbar: React.FC<NavbarProps> = ({ collapsed }) => {
 
         {/* Quick action buttons */}
         <div className="flex items-center gap-2.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/assistente')}
-            leftIcon={<Bot className="w-4 h-4 text-purple-500" />}
-            className="hidden sm:inline-flex"
-          >
-            Assistente AI
-          </Button>
-
           <Button
             variant="primary"
             size="sm"

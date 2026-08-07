@@ -7,7 +7,6 @@ import { CustomersList } from '../components/features/clientes/CustomersList';
 import { SuppliersList } from '../components/features/fornecedores/SuppliersList';
 import { PdvView } from '../components/features/vendas/PdvView';
 import { FinanceView } from '../components/features/financeiro/FinanceView';
-import { AIAssistantView } from '../components/features/ai/AIAssistantView';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -19,7 +18,6 @@ export const AppRoutes: React.FC = () => {
       <Route path="/fornecedores" element={<SuppliersList />} />
       <Route path="/vendas" element={<PdvView />} />
       <Route path="/financeiro" element={<FinanceView />} />
-      <Route path="/assistente" element={<AIAssistantView />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

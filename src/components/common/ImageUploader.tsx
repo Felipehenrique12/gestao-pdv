@@ -9,48 +9,83 @@ interface ImageUploaderProps {
   onChange: (images: ProductImage[]) => void;
 }
 
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
+
 export const ImageUploader: React.FC<ImageUploaderProps> = ({ images, onChange }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const simulateCloudinaryUpload = (files: FileList | File[]) => {
+  const uploadToCloudinary = async (file: File): Promise<string> => {
+    if (!CLOUDINARY_CLOUD_NAME) {
+      throw new Error('Configure VITE_CLOUDINARY_CLOUD_NAME no arquivo .env');
+    }
+
+    if (!CLOUDINARY_UPLOAD_PRESET) {
+      throw new Error('Configure VITE_CLOUDINARY_UPLOAD_PRESET no arquivo .env para habilitar upload unsigned do Cloudinary');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    formData.append('folder', 'nexerp/products');
+
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Falha ao enviar imagem: ${error}`);
+    }
+
+    const data = await response.json() as { secure_url?: string };
+
+    if (!data.secure_url) {
+      throw new Error('Cloudinary não retornou a URL da imagem.');
+    }
+
+    return data.secure_url;
+  };
+
+  const simulateCloudinaryUpload = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     if (fileArray.length === 0) return;
 
     setIsUploading(true);
     setUploadProgress(10);
 
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(interval);
-          return 90;
-        }
-        return prev + 20;
-      });
-    }, 150);
+    try {
+      const uploadedImages: ProductImage[] = [];
 
-    setTimeout(() => {
-      clearInterval(interval);
-      setUploadProgress(100);
-
-      const newImages: ProductImage[] = fileArray.map((file, idx) => {
-        const objectUrl = URL.createObjectURL(file);
-        return {
-          id: `img-${Date.now()}-${idx}`,
-          url: objectUrl, // Simulated Cloudinary URL format: https://res.cloudinary.com/demo/image/upload/...
+      for (let index = 0; index < fileArray.length; index += 1) {
+        const file = fileArray[index];
+        const url = await uploadToCloudinary(file);
+        uploadedImages.push({
+          id: `img-${Date.now()}-${index}`,
+          url,
           name: file.name,
-          isMain: images.length === 0 && idx === 0,
-          order: images.length + idx,
-        };
-      });
+          isMain: images.length === 0 && index === 0,
+          order: images.length + index,
+        });
 
-      onChange([...images, ...newImages]);
-      setIsUploading(false);
-      setUploadProgress(0);
-      toast.success(`${fileArray.length} imagem(ns) enviadas com sucesso (Cloudinary CDN)!`);
-    }, 1200);
+        setUploadProgress(Math.min(95, 10 + ((index + 1) / fileArray.length) * 80));
+      }
+
+      onChange([...images, ...uploadedImages]);
+      setUploadProgress(100);
+      toast.success(`${fileArray.length} imagem(ns) enviada(s) com sucesso para o Cloudinary.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro no upload da imagem';
+      toast.error(message);
+    } finally {
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadProgress(0);
+      }, 600);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -67,19 +102,18 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ images, onChange }
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files) {
-      simulateCloudinaryUpload(e.dataTransfer.files);
+      void simulateCloudinaryUpload(e.dataTransfer.files);
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      simulateCloudinaryUpload(e.target.files);
+      void simulateCloudinaryUpload(e.target.files);
     }
   };
 
   const handleRemove = (id: string) => {
     const filtered = images.filter((img) => img.id !== id);
-    // If we removed the main image, make the first remaining image main
     if (filtered.length > 0 && !filtered.some((img) => img.isMain)) {
       filtered[0].isMain = true;
     }
@@ -104,7 +138,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ images, onChange }
     copy[index] = copy[newIndex];
     copy[newIndex] = temp;
 
-    // reassign order
     copy.forEach((img, i) => (img.order = i));
     onChange(copy);
   };
@@ -139,18 +172,17 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ images, onChange }
               Arraste imagens aqui ou <span className="text-blue-600 dark:text-blue-400 underline">clique para selecionar</span>
             </p>
             <p className="text-xs text-slate-400 mt-0.5">
-              Suporta PNG, JPG, WEBP e GIF (Upload Múltiplo p/ Cloudinary)
+              Suporta PNG, JPG, WEBP e GIF. Upload real via Cloudinary.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Upload Progress Bar */}
       {isUploading && (
         <div className="space-y-1.5 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
           <div className="flex justify-between text-xs font-semibold text-blue-700 dark:text-blue-300">
-            <span>Enviando para o Cloudinary CDN...</span>
-            <span>{uploadProgress}%</span>
+            <span>Enviando para o Cloudinary...</span>
+            <span>{Math.round(uploadProgress)}%</span>
           </div>
           <div className="w-full bg-blue-200 dark:bg-blue-900 rounded-full h-2 overflow-hidden">
             <div
@@ -161,7 +193,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ images, onChange }
         </div>
       )}
 
-      {/* Image Preview & Order List */}
       {images.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -179,14 +210,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ images, onChange }
                   className="w-full h-28 object-cover group-hover:scale-105 transition-transform duration-300"
                 />
 
-                {/* Badge Main */}
                 {img.isMain && (
                   <span className="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-bold bg-amber-500 text-white rounded-md shadow-xs flex items-center gap-1">
                     <Star className="w-3 h-3 fill-current" /> Principal
                   </span>
                 )}
 
-                {/* Actions Overlay */}
                 <div className="absolute inset-0 bg-slate-900/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 p-1">
                   {!img.isMain && (
                     <Button

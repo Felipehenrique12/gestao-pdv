@@ -10,7 +10,6 @@ const PATH_MAP: Record<string, string> = {
   fornecedores: 'Fornecedores',
   vendas: 'Registro de Vendas (PDV)',
   financeiro: 'Financeiro & Fluxo de Caixa',
-  assistente: 'Assistente Inteligente (AI)',
 };
 
 export const Breadcrumb: React.FC = () => {
